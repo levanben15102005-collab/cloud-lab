@@ -1,0 +1,29 @@
+services:
+  # Backend nằm ngay thư mục gốc (cloud-lab)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - PORT=5000
+    networks:
+      - mern-network
+
+  # Frontend nằm trong thư mục client
+  frontend:
+    build:
+      context: ./client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - mern-network
+
+networks:
+  mern-network:
+    driver: bridge
