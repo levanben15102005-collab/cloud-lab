@@ -8,6 +8,7 @@ function App() {
   const [studentId, setStudentId] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [editingId, setEditingId] = useState(null); // Quản lý ID sinh viên đang sửa
 
   const fetchStudents = async () => {
     try {
@@ -23,27 +24,80 @@ function App() {
     fetchStudents();
   }, []);
 
+  // Xử lý Thêm mới hoặc Cập nhật Sinh viên
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, name, email })
-      });
+      if (editingId) {
+        // Cập nhật sinh viên (PUT API - Câu 106)
+        const response = await fetch(`${API_URL}/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, name, email })
+        });
 
-      if (response.ok) {
-        alert('Thêm sinh viên thành công!');
-        setStudentId('');
-        setName('');
-        setEmail('');
-        fetchStudents();
+        if (response.ok) {
+          alert('Cập nhật thông tin sinh viên thành công!');
+          resetForm();
+          fetchStudents();
+        } else {
+          alert('Có lỗi xảy ra khi cập nhật!');
+        }
       } else {
-        alert('Có lỗi xảy ra khi thêm sinh viên!');
+        // Thêm sinh viên mới (POST API - Câu 105)
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, name, email })
+        });
+
+        if (response.ok) {
+          alert('Thêm sinh viên thành công!');
+          resetForm();
+          fetchStudents();
+        } else {
+          alert('Có lỗi xảy ra khi thêm sinh viên!');
+        }
       }
     } catch (error) {
       console.error('Lỗi khi gửi form:', error);
     }
+  };
+
+  // Xử lý Xóa sinh viên (DELETE API - Câu 107)
+  const handleDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sinh viên này?')) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          alert('Xóa sinh viên thành công!');
+          fetchStudents();
+        } else {
+          alert('Có lỗi xảy ra khi xóa sinh viên!');
+        }
+      } catch (error) {
+        console.error('Lỗi khi xóa:', error);
+      }
+    }
+  };
+
+  // Nạp dữ liệu sinh viên lên Form để sửa
+  const handleEdit = (sv) => {
+    setEditingId(sv._id);
+    setStudentId(sv.studentId);
+    setName(sv.name);
+    setEmail(sv.email);
+  };
+
+  // Reset Form
+  const resetForm = () => {
+    setEditingId(null);
+    setStudentId('');
+    setName('');
+    setEmail('');
   };
 
   return (
@@ -71,7 +125,9 @@ function App() {
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
         boxSizing: 'border-box'
       }}>
-        <h3 style={{ marginTop: 0, marginBottom: '20px', textAlign: 'center' }}>Thêm Sinh Viên Mới</h3>
+        <h3 style={{ marginTop: 0, marginBottom: '20px', textAlign: 'center', color: editingId ? '#e1b12c' : '#ffffff' }}>
+          {editingId ? 'Cập Nhật Thông Tin Sinh Viên' : 'Thêm Sinh Viên Mới'}
+        </h3>
         
         <div style={{ marginBottom: '15px' }}>
           <label style={{ fontSize: '14px', fontWeight: '500' }}>MSSV:</label>
@@ -130,24 +186,41 @@ function App() {
           />
         </div>
 
-        <button type="submit" style={{ 
-          width: '100%', 
-          padding: '12px', 
-          backgroundColor: '#0066cc', 
-          color: '#fff', 
-          border: 'none', 
-          borderRadius: '6px', 
-          fontSize: '15px',
-          fontWeight: 'bold', 
-          cursor: 'pointer',
-          transition: 'background-color 0.2s'
-        }}>
-          Thêm Sinh Viên
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button type="submit" style={{ 
+            flex: 1, 
+            padding: '12px', 
+            backgroundColor: editingId ? '#e1b12c' : '#0066cc', 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: '6px', 
+            fontSize: '15px',
+            fontWeight: 'bold', 
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          }}>
+            {editingId ? 'Cập Nhật' : 'Thêm Sinh Viên'}
+          </button>
+
+          {editingId && (
+            <button type="button" onClick={resetForm} style={{ 
+              padding: '12px 18px', 
+              backgroundColor: '#555', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '6px', 
+              fontSize: '15px',
+              fontWeight: 'bold', 
+              cursor: 'pointer'
+            }}>
+              Hủy
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Khung Danh Sách Căn Giữa */}
-      <div style={{ width: '100%', maxWidth: '500px', textAlign: 'center' }}>
+      <div style={{ width: '100%', maxWidth: '580px', textAlign: 'center' }}>
         <h3 style={{ marginBottom: '15px' }}>Danh Sách Sinh Viên</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -159,15 +232,45 @@ function App() {
                 borderRadius: '8px', 
                 backgroundColor: 'rgba(255, 255, 255, 0.02)',
                 display: 'flex',
-                justifyContent: 'space-between',
+                justify: 'space-between',
                 alignItems: 'center',
                 textAlign: 'left'
               }}>
-                <div>
-                  <span style={{ fontWeight: 'bold', color: '#00a8ff', marginRight: '8px' }}>{sv.studentId}</span>
-                  <span style={{ fontWeight: '500' }}>- {sv.name}</span>
+                <div style={{ flex: 1, marginRight: '15px' }}>
+                  <div>
+                    <span style={{ fontWeight: 'bold', color: '#00a8ff', marginRight: '8px' }}>{sv.studentId}</span>
+                    <span style={{ fontWeight: '500' }}>- {sv.name}</span>
+                  </div>
+                  <div style={{ fontSize: '13px', opacity: 0.8, fontStyle: 'italic', marginTop: '4px' }}>{sv.email}</div>
                 </div>
-                <span style={{ fontSize: '13px', opacity: 0.8, fontStyle: 'italic' }}>{sv.email}</span>
+
+                {/* Cụm nút Thao tác Sửa & Xóa */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => handleEdit(sv)} style={{ 
+                    padding: '6px 12px', 
+                    backgroundColor: '#e1b12c', 
+                    color: '#1e1e1e', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    fontSize: '13px',
+                    fontWeight: 'bold', 
+                    cursor: 'pointer' 
+                  }}>
+                    Sửa
+                  </button>
+                  <button onClick={() => handleDelete(sv._id)} style={{ 
+                    padding: '6px 12px', 
+                    backgroundColor: '#e74c3c', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    fontSize: '13px',
+                    fontWeight: 'bold', 
+                    cursor: 'pointer' 
+                  }}>
+                    Xóa
+                  </button>
+                </div>
               </div>
             ))
           ) : (
