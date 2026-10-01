@@ -11,7 +11,7 @@ services:
     restart: always
 
   frontend:
-    image: levanben/mern-frontend:1.0
+    image: levanben/mern-frontend:2.0
     container_name: mern-frontend-hub
     ports:
       - "3000:3000"

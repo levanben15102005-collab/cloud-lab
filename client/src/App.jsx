@@ -29,7 +29,7 @@ function App() {
     e.preventDefault();
     try {
       if (editingId) {
-        // Cập nhật sinh viên (PUT API - Câu 106)
+        // Cập nhật sinh viên (PUT API)
         const response = await fetch(`${API_URL}/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -44,7 +44,7 @@ function App() {
           alert('Có lỗi xảy ra khi cập nhật!');
         }
       } else {
-        // Thêm sinh viên mới (POST API - Câu 105)
+        // Thêm sinh viên mới (POST API)
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -64,7 +64,7 @@ function App() {
     }
   };
 
-  // Xử lý Xóa sinh viên (DELETE API - Câu 107)
+  // Xử lý Xóa sinh viên (DELETE API)
   const handleDelete = async (id) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sinh viên này?')) {
       try {
@@ -106,12 +106,15 @@ function App() {
       display: 'flex', 
       flexDirection: 'column', 
       alignItems: 'center', 
-      justifyContent: 'flex-start',
+      justify: 'flex-start',
       padding: '40px 20px', 
       fontFamily: 'Segoe UI, Roboto, sans-serif',
       boxSizing: 'border-box'
     }}>
-      <h1 style={{ marginBottom: '25px', textAlign: 'center', letterSpacing: '1px' }}>QUẢN LÝ SINH VIÊN</h1>
+      {/* Tiêu đề ứng dụng đã được chỉnh sửa theo Câu 80 */}
+      <h1 style={{ marginBottom: '25px', textAlign: 'center', letterSpacing: '1px', color: '#00a8ff' }}>
+        QUẢN LÝ SINH VIÊN - Version 2.0
+      </h1>
 
       {/* Form Căn Giữa Màn Hình */}
       <form onSubmit={handleSubmit} style={{ 
@@ -126,7 +129,7 @@ function App() {
         boxSizing: 'border-box'
       }}>
         <h3 style={{ marginTop: 0, marginBottom: '20px', textAlign: 'center', color: editingId ? '#e1b12c' : '#ffffff' }}>
-          {editingId ? 'Cập Nhật Thông Tin Sinh Viên' : 'Thêm Sinh Viên Mới'}
+          {editingId ? 'Cập Nhật Thông Tin Sinh Viên' : 'Thêm Sinh Viên Mới (v2.0)'}
         </h3>
         
         <div style={{ marginBottom: '15px' }}>
@@ -232,7 +235,7 @@ function App() {
                 borderRadius: '8px', 
                 backgroundColor: 'rgba(255, 255, 255, 0.02)',
                 display: 'flex',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 textAlign: 'left'
               }}>
