@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  backend:
+    image: levanben/mern-backend:1.0
+    container_name: mern-backend-hub
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb+srv://levanben15102005_db_user:eB6wCEHOeuvicKMS@cluster0.yzwbwx9.mongodb.net/student_management?retryWrites=true&w=majority
+    restart: always
+
+  frontend:
+    image: levanben/mern-frontend:1.0
+    container_name: mern-frontend-hub
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
