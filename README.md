@@ -1,5 +1,5 @@
 # Cloud Computing Laboratory
-Student Name:
-Student ID:
-Class:
+Student Name:Lê Văn Bền
+Student ID:236822
+Class:DH23TIN08
 ## Bài thực hành Git và GitHub
