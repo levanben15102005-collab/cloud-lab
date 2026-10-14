@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Link kết nối API Backend
-const API_URL = 'http://localhost:5000/api/students';
+const API_URL = 'https://mern-backend-236822.onrender.com/api/students';
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -139,7 +139,7 @@ function App() {
             value={studentId} 
             onChange={(e) => setStudentId(e.target.value)} 
             required 
-            placeholder="Nhập MSSV (ví dụ: SV001)"
+            placeholder="Nhập MSSV"
             style={{ 
               width: '100%', 
               padding: '10px 12px', 
