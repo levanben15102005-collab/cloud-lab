@@ -3,34 +3,48 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
-// Import routes
-const studentRoutes = require('./routes/studentRoutes'); 
-
 dotenv.config();
 
+// Khởi tạo Express
 const app = express();
 
-// ==========================================
-// 1. CÁC MIDDLEWARE 
-// ==========================================
-app.use(cors()); // Cho phép Frontend kết nối API
-app.use(express.json()); // Đọc dữ liệu JSON từ req.body
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-// ==========================================
-// 2. KHAI BÁO ROUTES 
-// ==========================================
+// Import routes
+const studentRoutes = require('./routes/studentRoutes');
 app.use('/api', studentRoutes);
 
-// ==========================================
-// 3. KẾT NỐI DATABASE VÀ KHỞI ĐỘNG SERVER
-// ==========================================
-mongoose.connect(process.env.MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000 // Tự hủy kết nối sau 5s nếu bị kẹt IP/mạng
-})
-  .then(() => console.log('Kết nối MongoDB thành công'))
-  .catch((err) => console.error('Lỗi kết nối MongoDB:', err.message));
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server đang chạy tại port ${PORT}`);
+// Route kiểm tra server
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'MERN Backend đang hoạt động!'
+  });
 });
+
+// Kết nối MongoDB và khởi động server
+const PORT = process.env.PORT || 5000;
+
+async function startServer() {
+  try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error('Chưa cấu hình biến môi trường MONGODB_URI');
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000
+    });
+
+    console.log('Kết nối MongoDB thành công');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server đang chạy tại port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Lỗi khởi động server:', err.message);
+    process.exit(1);
+  }
+}
+
+startServer();
