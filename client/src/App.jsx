@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
-// Link kết nối API Backend
-const API_URL = 'https://mern-backend-236822.onrender.com/api/students';
+// Dùng đường dẫn tương đối để thông qua Nginx Reverse Proxy (Loại bỏ lỗi CORS & Chuẩn hóa Unified Origin)
+const API_URL = '/api/students';
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -106,7 +106,7 @@ function App() {
       display: 'flex', 
       flexDirection: 'column', 
       alignItems: 'center', 
-      justify: 'flex-start',
+      justifyContent: 'flex-start',
       padding: '40px 20px', 
       fontFamily: 'Segoe UI, Roboto, sans-serif',
       boxSizing: 'border-box'
