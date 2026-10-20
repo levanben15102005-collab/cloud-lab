@@ -1,4 +1,4 @@
-
+```javascript
 require('dotenv').config();
 
 const express = require('express');
@@ -6,10 +6,12 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 // ==========================================
-// 1. CAU HINH CORS
+// 1. CAU HINH CORS VA MIDDLEWARE
 // ==========================================
+
 const allowedOrigins = [
     process.env.CLIENT_URL,
     'http://localhost:5173',
@@ -18,6 +20,7 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
+        // Cho phep request khong co origin va origin hop le
         if (
             !origin ||
             allowedOrigins.includes(origin) ||
@@ -32,23 +35,31 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
 // 2. MODEL SINH VIEN
 // ==========================================
+
 const studentSchema = new mongoose.Schema({
     studentId: {
         type: String,
-        required: true
+        required: [true, 'MSSV khong duoc de trong'],
+        trim: true
     },
     name: {
         type: String,
-        required: true
+        required: [true, 'Ho ten khong duoc de trong'],
+        trim: true
     },
     email: {
         type: String,
-        required: true
+        required: [true, 'Email khong duoc de trong'],
+        trim: true,
+        lowercase: true
     }
+}, {
+    timestamps: true
 });
 
 const Student = mongoose.models.Student ||
@@ -57,6 +68,7 @@ const Student = mongoose.models.Student ||
 // ==========================================
 // 3. KET NOI MONGODB ATLAS
 // ==========================================
+
 const MONGO_URI =
     process.env.MONGO_URI ||
     process.env.MONGODB_URI ||
@@ -64,54 +76,81 @@ const MONGO_URI =
 
 let mongoReady = false;
 
-const connectDB = async () => {
+mongoose.connection.on('connected', () => {
+    mongoReady = true;
+    console.log('MongoDB Atlas da ket noi!');
+});
+
+mongoose.connection.on('disconnected', () => {
+    mongoReady = false;
+    console.log('MongoDB da ngat ket noi!');
+});
+
+mongoose.connection.on('error', (error) => {
+    mongoReady = false;
+    console.error('Loi MongoDB:', error.message);
+});
+
+async function connectDB() {
     if (!MONGO_URI) {
         throw new Error(
-            'Thieu bien moi truong MONGO_URI, MONGODB_URI hoac MONGODB_URL'
+            'Thieu MONGO_URI trong Environment cua Render'
         );
     }
 
     await mongoose.connect(MONGO_URI, {
-        serverSelectionTimeoutMS: 10000
+        serverSelectionTimeoutMS: 15000
     });
 
     mongoReady = true;
-    console.log('Connected to MongoDB Atlas successfully!');
-};
+    console.log('Ket noi MongoDB Atlas thanh cong!');
+}
 
-mongoose.connection.on('disconnected', () => {
-    mongoReady = false;
-    console.log('MongoDB disconnected');
-});
-
-const checkDB = (req, res, next) => {
-    if (!mongoReady || mongoose.connection.readyState !== 1) {
+function checkDB(req, res, next) {
+    if (
+        !mongoReady ||
+        mongoose.connection.readyState !== 1
+    ) {
         return res.status(503).json({
             message: 'MongoDB chua ket noi. Vui long thu lai sau.'
         });
     }
 
     next();
-};
+}
 
 // ==========================================
 // 4. ROUTES
 // ==========================================
 
+// Kiem tra backend
 app.get('/', (req, res) => {
-    res.send('Backend MERN da chay thanh cong!');
+    res.status(200).json({
+        message: 'Backend MERN da chay thanh cong!',
+        status: 'OK',
+        database: mongoReady ? 'connected' : 'disconnected'
+    });
+});
+
+// Kiem tra trang thai server va database
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        server: 'running',
+        database: mongoReady ? 'connected' : 'disconnected'
+    });
 });
 
 // Lay danh sach sinh vien
 app.get('/api/students', checkDB, async (req, res) => {
     try {
-        const students = await Student.find();
-        res.status(200).json(students);
+        const students = await Student.find().sort({ _id: -1 });
+
+        return res.status(200).json(students);
     } catch (error) {
         console.error('Loi lay danh sach:', error.message);
-        res.status(500).json({
-            message: 'Loi lay danh sach sinh vien',
-            error: error.message
+
+        return res.status(500).json({
+            message: 'Loi lay danh sach sinh vien'
         });
     }
 });
@@ -119,6 +158,12 @@ app.get('/api/students', checkDB, async (req, res) => {
 // Lay sinh vien theo MongoDB ID
 app.get('/api/students/:id', checkDB, async (req, res) => {
     try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: 'ID sinh vien khong hop le'
+            });
+        }
+
         const student = await Student.findById(req.params.id);
 
         if (!student) {
@@ -127,11 +172,12 @@ app.get('/api/students/:id', checkDB, async (req, res) => {
             });
         }
 
-        res.status(200).json(student);
+        return res.status(200).json(student);
     } catch (error) {
-        res.status(400).json({
-            message: 'ID sinh vien khong hop le',
-            error: error.message
+        console.error('Loi tim sinh vien:', error.message);
+
+        return res.status(500).json({
+            message: 'Loi tim sinh vien'
         });
     }
 });
@@ -141,27 +187,33 @@ app.post('/api/students', checkDB, async (req, res) => {
     try {
         const { studentId, name, email } = req.body;
 
-        if (!studentId || !name || !email) {
+        if (
+            typeof studentId !== 'string' ||
+            typeof name !== 'string' ||
+            typeof email !== 'string' ||
+            !studentId.trim() ||
+            !name.trim() ||
+            !email.trim()
+        ) {
             return res.status(400).json({
-                message: 'Vui long nhap MSSV, ho ten va email'
+                message: 'Vui long nhap MSSV, ho ten va email hop le'
             });
         }
 
-        const student = new Student({
-            studentId,
-            name,
-            email
+        const student = await Student.create({
+            studentId: studentId.trim(),
+            name: name.trim(),
+            email: email.trim()
         });
 
-        const savedStudent = await student.save();
-
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Them sinh vien thanh cong',
-            student: savedStudent
+            student: student
         });
     } catch (error) {
         console.error('Loi them sinh vien:', error.message);
-        res.status(400).json({
+
+        return res.status(400).json({
             message: 'Loi them sinh vien',
             error: error.message
         });
@@ -171,9 +223,51 @@ app.post('/api/students', checkDB, async (req, res) => {
 // Cap nhat sinh vien
 app.put('/api/students/:id', checkDB, async (req, res) => {
     try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: 'ID sinh vien khong hop le'
+            });
+        }
+
+        const { studentId, name, email } = req.body;
+        const updateData = {};
+
+        if (studentId !== undefined) {
+            if (typeof studentId !== 'string' || !studentId.trim()) {
+                return res.status(400).json({
+                    message: 'MSSV khong hop le'
+                });
+            }
+            updateData.studentId = studentId.trim();
+        }
+
+        if (name !== undefined) {
+            if (typeof name !== 'string' || !name.trim()) {
+                return res.status(400).json({
+                    message: 'Ho ten khong hop le'
+                });
+            }
+            updateData.name = name.trim();
+        }
+
+        if (email !== undefined) {
+            if (typeof email !== 'string' || !email.trim()) {
+                return res.status(400).json({
+                    message: 'Email khong hop le'
+                });
+            }
+            updateData.email = email.trim();
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({
+                message: 'Khong co thong tin can cap nhat'
+            });
+        }
+
         const updatedStudent = await Student.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             {
                 new: true,
                 runValidators: true
@@ -186,12 +280,14 @@ app.put('/api/students/:id', checkDB, async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Cap nhat sinh vien thanh cong',
             student: updatedStudent
         });
     } catch (error) {
-        res.status(400).json({
+        console.error('Loi cap nhat:', error.message);
+
+        return res.status(400).json({
             message: 'Loi cap nhat sinh vien',
             error: error.message
         });
@@ -199,40 +295,4 @@ app.put('/api/students/:id', checkDB, async (req, res) => {
 });
 
 // Xoa sinh vien
-app.delete('/api/students/:id', checkDB, async (req, res) => {
-    try {
-        const deletedStudent = await Student.findByIdAndDelete(
-            req.params.id
-        );
-
-        if (!deletedStudent) {
-            return res.status(404).json({
-                message: 'Khong tim thay sinh vien'
-            });
-        }
-
-        res.status(200).json({
-            message: 'Xoa sinh vien thanh cong',
-            student: deletedStudent
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: 'Loi xoa sinh vien',
-            error: error.message
-        });
-    }
-});
-
-// ==========================================
-// 5. KHOI DONG SERVER
-// ==========================================
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-
-    connectDB().catch((error) => {
-        mongoReady = false;
-        console.error('MongoDB connection error:', error.message);
-    });
-});
+app.delete('/api/students/:id', checkDB
