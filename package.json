@@ -1,20 +1,25 @@
 {
   "name": "cloud-lab",
   "version": "1.0.0",
-  "description": "Student Name: Student ID: Class: ## Bài thực hành Git và GitHub",
-  "main": "index.js",
+  "description": "Cloud Lab - Bài thực hành Git và GitHub",
+  "main": "src/server.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
+    "start": "node src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/levanben15102005-collab/cloud-lab.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mern",
+    "cloud-lab",
+    "student-236822"
+  ],
+  "author": "LeVanBen (MSSV: 236822)",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
