@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   backend:
-    image: levanben/mern-backend:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     container_name: mern-backend-hub
     ports:
       - "5000:5000"
@@ -11,10 +13,10 @@ services:
     restart: always
 
   frontend:
-    image: levanben/mern-frontend:2.0
+    image: levanben/mern-frontend:latest
     container_name: mern-frontend-hub
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
     restart: always
