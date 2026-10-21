@@ -1,4 +1,3 @@
-```javascript
 require('dotenv').config();
 
 const express = require('express');
@@ -8,11 +7,8 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ==========================================
-// 1. CAU HINH CORS VA MIDDLEWARE
-// ==========================================
-
 const allowedOrigins = [
+    'https://mern-frontend-236822.onrender.com',
     process.env.CLIENT_URL,
     'http://localhost:5173',
     'http://localhost:3000'
@@ -20,7 +16,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Cho phep request khong co origin va origin hop le
         if (
             !origin ||
             allowedOrigins.includes(origin) ||
@@ -36,10 +31,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// ==========================================
-// 2. MODEL SINH VIEN
-// ==========================================
 
 const studentSchema = new mongoose.Schema({
     studentId: {
@@ -64,10 +55,6 @@ const studentSchema = new mongoose.Schema({
 
 const Student = mongoose.models.Student ||
     mongoose.model('Student', studentSchema);
-
-// ==========================================
-// 3. KET NOI MONGODB ATLAS
-// ==========================================
 
 const MONGO_URI =
     process.env.MONGO_URI ||
@@ -119,11 +106,6 @@ function checkDB(req, res, next) {
     next();
 }
 
-// ==========================================
-// 4. ROUTES
-// ==========================================
-
-// Kiem tra backend
 app.get('/', (req, res) => {
     res.status(200).json({
         message: 'Backend MERN da chay thanh cong!',
@@ -132,7 +114,6 @@ app.get('/', (req, res) => {
     });
 });
 
-// Kiem tra trang thai server va database
 app.get('/health', (req, res) => {
     res.status(200).json({
         server: 'running',
@@ -140,14 +121,12 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Lay danh sach sinh vien
 app.get('/api/students', checkDB, async (req, res) => {
     try {
         const students = await Student.find().sort({ _id: -1 });
 
         return res.status(200).json(students);
-    } catch (error) {
-        console.error('Loi lay danh sach:', error.message);
+    } catch (error) {console.error('Loi lay danh sach:', error.message);
 
         return res.status(500).json({
             message: 'Loi lay danh sach sinh vien'
@@ -155,7 +134,6 @@ app.get('/api/students', checkDB, async (req, res) => {
     }
 });
 
-// Lay sinh vien theo MongoDB ID
 app.get('/api/students/:id', checkDB, async (req, res) => {
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
@@ -182,7 +160,6 @@ app.get('/api/students/:id', checkDB, async (req, res) => {
     }
 });
 
-// Them sinh vien
 app.post('/api/students', checkDB, async (req, res) => {
     try {
         const { studentId, name, email } = req.body;
@@ -220,7 +197,6 @@ app.post('/api/students', checkDB, async (req, res) => {
     }
 });
 
-// Cap nhat sinh vien
 app.put('/api/students/:id', checkDB, async (req, res) => {
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
@@ -254,8 +230,7 @@ app.put('/api/students/:id', checkDB, async (req, res) => {
             if (typeof email !== 'string' || !email.trim()) {
                 return res.status(400).json({
                     message: 'Email khong hop le'
-                });
-            }
+                });}
             updateData.email = email.trim();
         }
 
@@ -294,5 +269,46 @@ app.put('/api/students/:id', checkDB, async (req, res) => {
     }
 });
 
-// Xoa sinh vien
-app.delete('/api/students/:id', checkDB
+app.delete('/api/students/:id', checkDB, async (req, res) => {
+    try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({
+                message: 'ID sinh vien khong hop le'
+            });
+        }
+
+        const deletedStudent = await Student.findByIdAndDelete(req.params.id);
+
+        if (!deletedStudent) {
+            return res.status(404).json({
+                message: 'Khong tim thay sinh vien'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Xoa sinh vien thanh cong',
+            student: deletedStudent
+        });
+    } catch (error) {
+        console.error('Loi xoa sinh vien:', error.message);
+
+        return res.status(500).json({
+            message: 'Loi xoa sinh vien',
+            error: error.message
+        });
+    }
+});
+
+async function startServer() {
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            console.log(`Server dang chay tren port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Khoi dong server that bai:', error.message);
+        process.exit(1);
+    }
+}
+
+startServer();
