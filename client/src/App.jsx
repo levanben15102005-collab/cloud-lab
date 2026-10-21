@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 // Dùng link localhost hoặc link Codespaces Public của Port 5000
-const API_URL = '/api/students';
+const API_URL = 'https://mern-backend-236822.onrender.com/api/students';
 
 function App() {
   const [students, setStudents] = useState([]);
